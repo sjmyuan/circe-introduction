@@ -17,7 +17,7 @@ lazy val projectSettings = Seq(
   name := "circe-introduction",
   version := "0.0.1",
   organization := "circe.intro",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.12.11",
   resolvers ++= Seq(
     Resolver.sonatypeRepo("releases"),
     Resolver.sonatypeRepo("snapshots")
@@ -35,8 +35,6 @@ val circeVersion = "0.13.0"
 lazy val projectDependencies = Seq(
   "io.circe"                   %% "circe-parser"                       % circeVersion,
   "io.circe"                   %% "circe-generic"                      % circeVersion,
-  "io.circe"                   %% "circe-java8"                        % circeVersion,
-  "io.circe"                   %% "circe-fs2"                          % circeVersion,
 )
 
 // https://tpolecat.github.io/2017/04/25/scalac-flags.html
