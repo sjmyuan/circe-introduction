@@ -6,7 +6,45 @@ import io.circe.parser
 import io.circe.DecodingFailure
 import io.circe.CursorOp
 import io.circe.ParsingFailure
+import DecoderWithPrettyErrorMessage._
 
+trait DecoderWithPrettyErrorMessage[A] {
+  def getWithPrettyErrorMessage(c: HCursor, field: String)(
+      implicit decoder: Decoder[A]
+  ): Decoder.Result[A]
+}
+
+object DecoderWithPrettyErrorMessage {
+  implicit val stringDecoderWithPrettyErrorMessage
+      : DecoderWithPrettyErrorMessage[String] =
+    new DecoderWithPrettyErrorMessage[String] {
+      override def getWithPrettyErrorMessage(c: HCursor, field: String)(
+          implicit decoder: Decoder[String]
+      ): Decoder.Result[String] =
+        c.get(field)(
+          decoder
+            .withErrorMessage(s"$field should be a String")
+        )
+    }
+  implicit val intDecoderWithPrettyErrorMessage
+      : DecoderWithPrettyErrorMessage[Int] =
+    new DecoderWithPrettyErrorMessage[Int] {
+      override def getWithPrettyErrorMessage(c: HCursor, field: String)(
+          implicit decoder: Decoder[Int]
+      ): Decoder.Result[Int] =
+        c.get(field)(
+          decoder
+            .withErrorMessage(s"$field should be a Int")
+        )
+    }
+  implicit class HCursorOps(c: HCursor) {
+    def getWithPrettyErrorMessage[A: DecoderWithPrettyErrorMessage: Decoder](
+        field: String
+    ) =
+      implicitly[DecoderWithPrettyErrorMessage[A]]
+        .getWithPrettyErrorMessage(c, field)
+  }
+}
 object Main extends App {
   case class Person(name: String, age: Int)
   case class IdCard(id: Int, person: Person)
@@ -19,8 +57,8 @@ object Main extends App {
   implicit val personDecoder: Decoder[Person] = new Decoder[Person] {
     def apply(c: HCursor): Decoder.Result[Person] =
       for {
-        name <- c.get[String]("name")
-        age <- c.get[Int]("age")
+        name <- c.getWithPrettyErrorMessage[String]("name")
+        age <- c.getWithPrettyErrorMessage[Int]("age")
       } yield Person(name, age)
   }.validate(c => {
     List(("name", "name is required"), ("age", "age is required"))
@@ -31,7 +69,7 @@ object Main extends App {
   implicit val idCardDecoder: Decoder[IdCard] = new Decoder[IdCard] {
     def apply(c: HCursor): Decoder.Result[IdCard] =
       for {
-        id <- c.get[Int]("id")
+        id <- c.getWithPrettyErrorMessage[Int]("id")
         person <- c.get[Person]("person")
       } yield IdCard(id, person)
   }.validate(c => {
@@ -79,7 +117,8 @@ object Main extends App {
     {
     "id": 18,
     "person": {
-       "age": 22
+       "name": 1,
+       "age": 11
     }
   }
   ]
